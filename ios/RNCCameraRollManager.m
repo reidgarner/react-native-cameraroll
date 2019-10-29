@@ -87,10 +87,12 @@ RCT_ENUM_CONVERTER(PHAssetMediaSubtype, (@{
     }
   }
 
-  if (subTypePredicate != nil) {
+  if (subTypePredicate != nil && mediaTypePredicate != nil) {
     options.predicate = [NSCompoundPredicate andPredicateWithSubpredicates:@[mediaTypePredicate, subTypePredicate]];
-  } else {
+  } else if (mediaTypePredicate != nil) {
     options.predicate = mediaTypePredicate;
+  } else if (subTypePredicate != nil) {
+    options.predicate = subTypePredicate;
   }
 
   return options;
@@ -172,7 +174,7 @@ RCT_EXPORT_METHOD(saveToCameraRoll:(NSURLRequest *)request
   };
   void (^saveWithOptions)(void) = ^void() {
     if (![options[@"album"] isEqualToString:@""]) {
-  
+
       PHFetchOptions *fetchOptions = [[PHFetchOptions alloc] init];
       fetchOptions.predicate = [NSPredicate predicateWithFormat:@"title = %@", options[@"album"] ];
       collection = [PHAssetCollection fetchAssetCollectionsWithType:PHAssetCollectionTypeAlbum
@@ -257,7 +259,7 @@ RCT_EXPORT_METHOD(getPhotos:(NSDictionary *)params
   NSString *const mediaSubtypeStrings = [[RCTConvert NSString:params[@"mediaSubtypes"]] lowercaseString];
   NSString *const mediaType = [RCTConvert NSString:params[@"assetType"]];
   NSArray<NSString *> *const mimeTypes = [RCTConvert NSStringArray:params[@"mimeTypes"]];
-  
+
   // If groupTypes is "all", we want to fetch the SmartAlbum "all photos". Otherwise, all
   // other groupTypes values require the "album" collection type.
   PHAssetCollectionType const collectionType = ([groupTypes isEqualToString:@"all"]
@@ -266,23 +268,23 @@ RCT_EXPORT_METHOD(getPhotos:(NSDictionary *)params
   PHAssetCollectionSubtype const collectionSubtype = [RCTConvert PHAssetCollectionSubtype:groupTypes];
 
  PHAssetMediaSubtype const mediaSubtypes = [RCTConvert PHAssetMediaSubtype:mediaSubtypeStrings];
-  
+
   // Predicate for fetching assets within a collection
   PHFetchOptions *const assetFetchOptions = [RCTConvert PHFetchOptionsFromMediaType:mediaType subType:mediaSubtypes];
   assetFetchOptions.sortDescriptors = @[[NSSortDescriptor sortDescriptorWithKey:@"creationDate" ascending:NO]];
-  
+
   BOOL __block foundAfter = NO;
   BOOL __block hasNextPage = NO;
   BOOL __block resolvedPromise = NO;
   NSMutableArray<NSDictionary<NSString *, id> *> *assets = [NSMutableArray new];
-  
+
   // Filter collection name ("group")
   PHFetchOptions *const collectionFetchOptions = [PHFetchOptions new];
   collectionFetchOptions.sortDescriptors = @[[NSSortDescriptor sortDescriptorWithKey:@"endDate" ascending:NO]];
   if (groupName != nil) {
     collectionFetchOptions.predicate = [NSPredicate predicateWithFormat:[NSString stringWithFormat:@"localizedTitle == '%@'", groupName]];
   }
-  
+
   BOOL __block stopCollections_;
   NSString __block *currentCollectionName;
 
