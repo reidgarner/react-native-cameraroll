@@ -12,7 +12,7 @@
 
 @interface RCTConvert (PHFetchOptions)
 
-+ (PHFetchOptions *)PHFetchOptionsFromMediaType:(NSString *)mediaType;
++ (PHFetchOptions *)PHFetchOptionsFromMediaType:(NSString *)mediaType subType:(PHAssetMediaSubtype)subType;
 
 @end
 

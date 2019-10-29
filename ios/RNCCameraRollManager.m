@@ -40,30 +40,60 @@ RCT_ENUM_CONVERTER(PHAssetCollectionSubtype, (@{
 
 @end
 
+@implementation RCTConvert (PHAssetMediaSubtype)
+
+RCT_ENUM_CONVERTER(PHAssetMediaSubtype, (@{
+   @"none": @(PHAssetMediaSubtypeNone),
+   @"panorama": @(PHAssetMediaSubtypePhotoPanorama),
+   @"hdr": @(PHAssetMediaSubtypePhotoHDR),
+   @"screenshot": @(PHAssetMediaSubtypePhotoScreenshot),
+   @"live": @(PHAssetMediaSubtypePhotoLive),
+   @"video-streamed": @(PHAssetMediaSubtypeVideoStreamed),
+   @"video-highfps": @(PHAssetMediaSubtypeVideoHighFrameRate),
+   @"timelapse": @(PHAssetMediaSubtypeVideoTimelapse),
+   @"portrait": @(PHAssetMediaSubtypePhotoDepthEffect),
+}), PHAssetMediaSubtypeNone, integerValue)
+
+@end
+
+
 @implementation RCTConvert (PHFetchOptions)
 
-+ (PHFetchOptions *)PHFetchOptionsFromMediaType:(NSString *)mediaType
++ (PHFetchOptions *)PHFetchOptionsFromMediaType:(NSString *)mediaType subType:(PHAssetMediaSubtype)subType
 {
   // This is not exhaustive in terms of supported media type predicates; more can be added in the future
   NSString *const lowercase = [mediaType lowercaseString];
-  
+
+  NSPredicate * subTypePredicate = nil;
+
+  if (subType != PHAssetMediaSubtypeNone) {
+    subTypePredicate = [NSPredicate predicateWithFormat:@"(mediaSubtype & %d) != 0", subType];
+  }
+
+  NSPredicate *mediaTypePredicate = nil;
+
+  PHFetchOptions *const options = [PHFetchOptions new];
+
   if ([lowercase isEqualToString:@"photos"]) {
-    PHFetchOptions *const options = [PHFetchOptions new];
-    options.predicate = [NSPredicate predicateWithFormat:@"mediaType = %d", PHAssetMediaTypeImage];
-    return options;
+    mediaTypePredicate = [NSPredicate predicateWithFormat:@"mediaType = %d", PHAssetMediaTypeImage];
   } else if ([lowercase isEqualToString:@"videos"]) {
-    PHFetchOptions *const options = [PHFetchOptions new];
-    options.predicate = [NSPredicate predicateWithFormat:@"mediaType = %d", PHAssetMediaTypeVideo];
-    return options;
+    mediaTypePredicate = [NSPredicate predicateWithFormat:@"mediaType = %d", PHAssetMediaTypeVideo];
   } else {
     if (![lowercase isEqualToString:@"all"]) {
       RCTLogError(@"Invalid filter option: '%@'. Expected one of 'photos',"
                   "'videos' or 'all'.", mediaType);
+
+      return options;
     }
-    // This case includes the "all" mediatype
-    PHFetchOptions *const options = [PHFetchOptions new];
-    return options;
   }
+
+  if (subTypePredicate != nil) {
+    options.predicate = [NSCompoundPredicate andPredicateWithSubpredicates:@[mediaTypePredicate, subTypePredicate]];
+  } else {
+    options.predicate = mediaTypePredicate;
+  }
+
+  return options;
 }
 
 @end
@@ -224,6 +254,7 @@ RCT_EXPORT_METHOD(getPhotos:(NSDictionary *)params
   NSString *const afterCursor = [RCTConvert NSString:params[@"after"]];
   NSString *const groupName = [RCTConvert NSString:params[@"groupName"]];
   NSString *const groupTypes = [[RCTConvert NSString:params[@"groupTypes"]] lowercaseString];
+  NSString *const mediaSubtypeStrings = [[RCTConvert NSString:params[@"mediaSubtypes"]] lowercaseString];
   NSString *const mediaType = [RCTConvert NSString:params[@"assetType"]];
   NSArray<NSString *> *const mimeTypes = [RCTConvert NSStringArray:params[@"mimeTypes"]];
   
@@ -233,9 +264,11 @@ RCT_EXPORT_METHOD(getPhotos:(NSDictionary *)params
                                                 ? PHAssetCollectionTypeSmartAlbum
                                                 : PHAssetCollectionTypeAlbum);
   PHAssetCollectionSubtype const collectionSubtype = [RCTConvert PHAssetCollectionSubtype:groupTypes];
+
+ PHAssetMediaSubtype const mediaSubtypes = [RCTConvert PHAssetMediaSubtype:mediaSubtypeStrings];
   
   // Predicate for fetching assets within a collection
-  PHFetchOptions *const assetFetchOptions = [RCTConvert PHFetchOptionsFromMediaType:mediaType];
+  PHFetchOptions *const assetFetchOptions = [RCTConvert PHFetchOptionsFromMediaType:mediaType subType:mediaSubtypes];
   assetFetchOptions.sortDescriptors = @[[NSSortDescriptor sortDescriptorWithKey:@"creationDate" ascending:NO]];
   
   BOOL __block foundAfter = NO;
