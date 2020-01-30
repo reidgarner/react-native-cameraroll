@@ -300,35 +300,26 @@ RCT_EXPORT_METHOD(getPhotos:(NSDictionary *)params
         return; // skip until we get to the first one
       }
 
-      // Get underlying resources of an asset - this includes files as well as details about edited PHAssets
-//      NSArray<PHAssetResource *> *const assetResources = [PHAssetResource assetResourcesForAsset:asset];
-//      if (![assetResources firstObject]) {
-//        return;
-//      }
-//      PHAssetResource *const _Nonnull resource = [assetResources firstObject];
-//
-//      if ([mimeTypes count] > 0) {
-
-//
-//        BOOL __block mimeTypeFound = NO;
-//        [mimeTypes enumerateObjectsUsingBlock:^(NSString * _Nonnull mimeTypeFilter, NSUInteger idx, BOOL * _Nonnull stop) {
-//          if ([mimeType isEqualToString:mimeTypeFilter]) {
-//            mimeTypeFound = YES;
-//            *stop = YES;
-//          }
-//        }];
-//
-//        if (!mimeTypeFound) {
-//          return;
-//        }
-//      }
-
-      if (mimeTypes.count > 0) {
-        NSString *uti = [asset valueForKey:@"uniformTypeIdentifier"];
-        NSString *const mimeType = (NSString *)CFBridgingRelease(UTTypeCopyPreferredTagWithClass((__bridge CFStringRef _Nonnull)(uti), kUTTagClassMIMEType));
-        if (![mimeTypes containsObject:mimeType]) {
+       if (mimeTypes.count > 0) {
+         // Get underlying resources of an asset - this includes files as well as details about edited PHAssets
+        NSArray<PHAssetResource *> *const assetResources = [PHAssetResource assetResourcesForAsset:asset];
+        if (![assetResources firstObject]) {
           return;
         }
+        PHAssetResource *const _Nonnull resource = [assetResources firstObject];
+
+       BOOL __block mimeTypeFound = NO;
+       [mimeTypes enumerateObjectsUsingBlock:^(NSString * _Nonnull mimeTypeFilter, NSUInteger idx, BOOL * _Nonnull stop) {
+         if ([mimeType isEqualToString:mimeTypeFilter]) {
+           mimeTypeFound = YES;
+           *stop = YES;
+         }
+       }];
+
+       if (!mimeTypeFound) {
+         return;
+       }
+       
       }
 
 
