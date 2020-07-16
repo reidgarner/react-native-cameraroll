@@ -87,12 +87,10 @@ RCT_ENUM_CONVERTER(PHAssetMediaSubtype, (@{
     }
   }
 
-  if (subTypePredicate != nil && mediaTypePredicate != nil) {
+  if (subTypePredicate != nil) {
     options.predicate = [NSCompoundPredicate andPredicateWithSubpredicates:@[mediaTypePredicate, subTypePredicate]];
-  } else if (mediaTypePredicate != nil) {
+  } else {
     options.predicate = mediaTypePredicate;
-  } else if (subTypePredicate != nil) {
-    options.predicate = subTypePredicate;
   }
 
   return options;
@@ -267,7 +265,7 @@ RCT_EXPORT_METHOD(getPhotos:(NSDictionary *)params
                                                 : PHAssetCollectionTypeAlbum);
   PHAssetCollectionSubtype const collectionSubtype = [RCTConvert PHAssetCollectionSubtype:groupTypes];
 
- PHAssetMediaSubtype const mediaSubtypes = [RCTConvert PHAssetMediaSubtype:mediaSubtypeStrings];
+  PHAssetMediaSubtype const mediaSubtypes = [RCTConvert PHAssetMediaSubtype:mediaSubtypeStrings];
 
   // Predicate for fetching assets within a collection
   PHFetchOptions *const assetFetchOptions = [RCTConvert PHFetchOptionsFromMediaType:mediaType subType:mediaSubtypes];
